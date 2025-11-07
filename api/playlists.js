@@ -9,6 +9,9 @@ import {
 } from "#db/queries/playlists";
 import { createPlaylistTrack } from "#db/queries/playlists_tracks";
 import { getTracksByPlaylistId } from "#db/queries/tracks";
+import requireUser from "#middleware/requireUser";
+
+router.use(requireUser);
 
 router.get("/", async (req, res) => {
   const playlists = await getPlaylists();
@@ -29,12 +32,14 @@ router.post("/", async (req, res) => {
 router.param("id", async (req, res, next, id) => {
   const playlist = await getPlaylistById(id);
   if (!playlist) return res.status(404).send("Playlist not found.");
-
   req.playlist = playlist;
   next();
 });
 
 router.get("/:id", (req, res) => {
+  if (req.user.id !== req.playlist.user_id) {
+    return res.status(403).send("Unauthorised - Access Denied");
+  }
   res.send(req.playlist);
 });
 
